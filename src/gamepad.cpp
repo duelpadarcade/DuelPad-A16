@@ -54,6 +54,8 @@ void Gamepad::setup()
 	mapButtonA1  = new GamepadButtonMapping(GAMEPAD_MASK_A1);
 	mapButtonA2  = new GamepadButtonMapping(GAMEPAD_MASK_A2);
 	mapButtonFn  = new GamepadButtonMapping(AUX_MASK_FUNCTION);
+	mapButtonA3  = new GamepadButtonMapping(GAMEPAD_MASK_A3);
+	mapButtonA4  = new GamepadButtonMapping(GAMEPAD_MASK_A4);
 
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
 	{
@@ -107,6 +109,8 @@ void Gamepad::reinit()
 	delete mapButtonA1;
 	delete mapButtonA2;
 	delete mapButtonFn;
+		delete mapButtonA3;
+	delete mapButtonA4;
 
 	// reinitialize pin mappings
 	this->setup();

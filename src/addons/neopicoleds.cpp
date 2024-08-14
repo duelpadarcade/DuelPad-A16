@@ -34,7 +34,8 @@ const std::string BUTTON_LABEL_L3 = "L3";
 const std::string BUTTON_LABEL_R3 = "R3";
 const std::string BUTTON_LABEL_A1 = "A1";
 const std::string BUTTON_LABEL_A2 = "A2";
-
+const std::string BUTTON_LABEL_A3 = "A3";
+const std::string BUTTON_LABEL_A4 = "A4";
 static std::vector<uint8_t> EMPTY_VECTOR;
 
 uint32_t rgbPLEDValues[4];
@@ -165,8 +166,64 @@ void NeoPicoLEDAddon::process()
 	if ( action != HOTKEY_LEDS_NONE ) {
 		as.HandleEvent(action);
 	}
+	uint32_t n_dpad = 0;
 
-	uint32_t buttonState = gamepad->state.dpad << 16 | gamepad->state.buttons;
+	if(gamepad->getOptions().dpadMode == DpadMode::DPAD_MODE_LEFT_ANALOG)
+	{
+		if (gamepad->state.lx == GAMEPAD_JOYSTICK_MAX)
+		{
+			n_dpad |= GAMEPAD_MASK_RIGHT;
+		}
+		if (gamepad->state.lx == GAMEPAD_JOYSTICK_MIN)
+		{
+			n_dpad |= GAMEPAD_MASK_LEFT;
+		}
+		if (gamepad->state.ly == GAMEPAD_JOYSTICK_MIN)
+		{
+			n_dpad |= GAMEPAD_MASK_UP;
+		}
+		if (gamepad->state.ly == GAMEPAD_JOYSTICK_MAX)
+		{
+			n_dpad |= GAMEPAD_MASK_DOWN;
+		}
+	}
+	else if(gamepad->getOptions().dpadMode == DpadMode::DPAD_MODE_RIGHT_ANALOG)
+	{
+		if (gamepad->state.rx == GAMEPAD_JOYSTICK_MAX)
+		{
+			n_dpad |= GAMEPAD_MASK_RIGHT;
+		}
+		if (gamepad->state.ry == GAMEPAD_JOYSTICK_MIN)
+		{
+			n_dpad |= GAMEPAD_MASK_UP;
+		}
+		if (gamepad->state.rx == GAMEPAD_JOYSTICK_MIN)
+		{
+			n_dpad |= GAMEPAD_MASK_LEFT;
+		}
+		if (gamepad->state.ry == GAMEPAD_JOYSTICK_MAX)
+		{
+			n_dpad |= GAMEPAD_MASK_DOWN;
+		}	
+	}
+	else if(gamepad->getOptions().dpadMode == DpadMode::DPAD_MODE_DIGITAL)
+	{
+		n_dpad = gamepad->state.dpad ;
+	}
+	
+	uint32_t buttonState = n_dpad << 16 | gamepad->state.buttons;
+	Mask_t values = Storage::getInstance().GetGamepad()->debouncedGpio;
+
+	if(values & ((uint32_t)( 1<< 3 )))
+	{
+		buttonState |= GAMEPAD_MASK_A4;
+	}
+
+	if(values & ((uint32_t)( 1<< 7 )))
+	{
+		buttonState |= GAMEPAD_MASK_A3;
+	}
+
 	vector<Pixel> pressed;
 	for (auto row : matrix.pixels)
 	{
@@ -188,6 +245,17 @@ void NeoPicoLEDAddon::process()
 	} else {
 		as.SetBrightness(AnimationStation::GetBrightness());
 	}
+
+		FocusModeOptions * focusModeOptions = &Storage::getInstance().getAddonOptions().focusModeOptions;
+    if (isValidPin(focusModeOptions->pin))
+    {
+        if(!gpio_get(focusModeOptions->pin))
+        {
+            if (focusModeOptions->enabled && focusModeOptions->macroLockEnabled)
+            as.DimBrightnessTo0();
+
+        }
+    }
 
 	as.ApplyBrightness(frame);
 
@@ -320,8 +388,10 @@ std::vector<std::vector<Pixel>> NeoPicoLEDAddon::generatedLEDStickless(vector<ve
 			PIXEL(BUTTON_LABEL_S2, GAMEPAD_MASK_S2),
 			PIXEL(BUTTON_LABEL_L3, GAMEPAD_MASK_L3),
 			PIXEL(BUTTON_LABEL_R3, GAMEPAD_MASK_R3),
-			PIXEL(BUTTON_LABEL_A1, GAMEPAD_MASK_A1),
-			PIXEL(BUTTON_LABEL_A2, GAMEPAD_MASK_A2),
+			// PIXEL(BUTTON_LABEL_A1, GAMEPAD_MASK_A1),
+			// PIXEL(BUTTON_LABEL_A2, GAMEPAD_MASK_A2),
+							PIXEL(BUTTON_LABEL_A3, GAMEPAD_MASK_A3),
+				PIXEL(BUTTON_LABEL_A4, GAMEPAD_MASK_A4),
 		},
 	};
 
@@ -486,6 +556,8 @@ uint8_t NeoPicoLEDAddon::setupButtonPositions()
 	buttonPositions.emplace(BUTTON_LABEL_R3, ledOptions.indexR3);
 	buttonPositions.emplace(BUTTON_LABEL_A1, ledOptions.indexA1);
 	buttonPositions.emplace(BUTTON_LABEL_A2, ledOptions.indexA2);
+		buttonPositions.emplace(BUTTON_LABEL_A3, ledOptions.indexA3);
+	buttonPositions.emplace(BUTTON_LABEL_A4, ledOptions.indexA4);
 	uint8_t buttonCount = 0;
 	for (auto const& buttonPosition : buttonPositions)
 	{
